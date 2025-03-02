@@ -68,11 +68,12 @@ const SectionsAlignment = {
         SectionManager.refreshSection(sectionId);
     },
 
+    // Update the updateContentOrder method to include cameras
     updateContentOrder(sectionId, content) {
         const tables = {};
         const editors = {};
         const cameras = {};
-    
+
         content.forEach((item, index) => {
             if (item.type === 'Table') {
                 tables[item.number] = {
@@ -94,10 +95,10 @@ const SectionsAlignment = {
                 };
             }
         });
-    
+
         // Update table data
         DataStore.setTableData(sectionId, 'tables', tables);
-    
+
         // Update editor data
         DataStore.setTableData(sectionId, 'editors', editors);
         
@@ -176,6 +177,7 @@ const SectionsAlignment = {
         `).join('');
     },
 
+    // Update the updateContentName method to include cameras
     updateContentName(sectionId, contentType, contentNumber, newName) {
         if (contentType === 'Table') {
             const tables = DataStore.getTableData(sectionId, 'tables') || {};

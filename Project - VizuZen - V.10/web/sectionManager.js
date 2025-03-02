@@ -66,7 +66,7 @@ const SectionManager = {
         });
     },
 
-    
+    // Update the restoreContentForSection method to include cameras
     async restoreContentForSection(sectionId) {
         const sectionContent = document.querySelector(`#section-content-${sectionId}`);
         const tableData = DataStore.getTableData(sectionId, 'tables') || {};
@@ -74,7 +74,7 @@ const SectionManager = {
         const cameraData = DataStore.getTableData(sectionId, 'cameras') || {};
         
         const content = [];
-    
+
         // Prepare tables
         Object.entries(tableData).forEach(([tableNumber, data]) => {
             content.push({
@@ -85,7 +85,7 @@ const SectionManager = {
                 order: data.order || 0
             });
         });
-    
+
         // Prepare editors
         Object.entries(editorData).forEach(([editorNumber, data]) => {
             content.push({
@@ -107,13 +107,13 @@ const SectionManager = {
                 order: data.order || 0
             });
         });
-    
+
         // Sort content based on order
         content.sort((a, b) => a.order - b.order);
-    
+
         // Clear existing content
         sectionContent.innerHTML = '';
-    
+
         // Render content
         for (const item of content) {
             if (item.type === 'table') {
@@ -542,13 +542,12 @@ const SectionManager = {
         }
     },
     
-
-
     // Add the addCamera method
     async addCamera(sectionId) {
         console.log(`Adding camera to section ${sectionId}`);
         await CameraManager.addCamera(sectionId);
     },
+    
  
 
     addTable(sectionId) {
