@@ -5,6 +5,7 @@ import tempfile
 import json
 import math
 import eel
+import bpy.types
 
 def capture_viewport_screenshot():
     """Capture a screenshot from the current viewport"""
