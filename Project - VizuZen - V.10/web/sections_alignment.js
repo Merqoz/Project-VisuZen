@@ -71,7 +71,8 @@ const SectionsAlignment = {
     updateContentOrder(sectionId, content) {
         const tables = {};
         const editors = {};
-
+        const cameras = {};
+    
         content.forEach((item, index) => {
             if (item.type === 'Table') {
                 tables[item.number] = {
@@ -85,21 +86,31 @@ const SectionsAlignment = {
                     name: item.name,
                     order: index
                 };
+            } else if (item.type === 'Camera') {
+                cameras[item.number] = {
+                    ...item.data,
+                    name: item.name,
+                    order: index
+                };
             }
         });
-
+    
         // Update table data
         DataStore.setTableData(sectionId, 'tables', tables);
-
+    
         // Update editor data
         DataStore.setTableData(sectionId, 'editors', editors);
+        
+        // Update camera data
+        DataStore.setTableData(sectionId, 'cameras', cameras);
     },
 
     getSectionContent(sectionId) {
         const content = [];
         const tables = DataStore.getTableData(sectionId, 'tables') || {};
         const editors = DataStore.getTableData(sectionId, 'editors') || {};
-
+        const cameras = DataStore.getTableData(sectionId, 'cameras') || {};
+    
         // Add tables
         Object.entries(tables).forEach(([tableNumber, tableData]) => {
             content.push({
@@ -111,7 +122,7 @@ const SectionsAlignment = {
                 order: tableData.order || 0
             });
         });
-
+    
         // Add editors
         Object.entries(editors).forEach(([editorNumber, editorData]) => {
             content.push({
@@ -123,10 +134,22 @@ const SectionsAlignment = {
                 order: editorData.order || 0
             });
         });
-
+        
+        // Add cameras
+        Object.entries(cameras).forEach(([cameraNumber, cameraData]) => {
+            content.push({
+                type: 'Camera',
+                reference: `${CameraManager.generateCameraReference(sectionId, cameraNumber)}`,
+                number: parseInt(cameraNumber),
+                name: cameraData.name || `Camera ${cameraNumber}`,
+                data: cameraData,
+                order: cameraData.order || 0
+            });
+        });
+    
         // Sort content based on order
         content.sort((a, b) => a.order - b.order);
-
+    
         return content;
     },
 
@@ -166,11 +189,17 @@ const SectionsAlignment = {
                 editors[contentNumber].name = newName;
                 DataStore.setTableData(sectionId, 'editors', editors);
             }
+        } else if (contentType === 'Camera') {
+            const cameras = DataStore.getTableData(sectionId, 'cameras') || {};
+            if (cameras[contentNumber]) {
+                cameras[contentNumber].name = newName;
+                DataStore.setTableData(sectionId, 'cameras', cameras);
+            }
         }
         this.updateDialogContent(sectionId);
         SectionManager.refreshSection(sectionId);
     },
-
+    
     deleteContent(sectionId, index) {
         const content = this.getSectionContent(sectionId);
         if (index < 0 || index >= content.length) return;

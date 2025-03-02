@@ -753,3 +753,97 @@ body {
 #sections-container {
     margin-top: 20px;
 }
+
+/* Camera Styles */
+.camera-wrapper {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background-color: #383838;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.camera-title {
+    padding: 10px;
+    background-color: #4a4a4a;
+    font-weight: bold;
+    border-bottom: 1px solid #5a5a5a;
+    color: #e0e0e0;
+    cursor: text;
+}
+
+.camera-preview {
+    padding: 10px;
+    text-align: center;
+    background-color: #2a2a2a;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.camera-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+}
+
+.camera-info {
+    padding: 10px;
+    background-color: #333;
+    color: #ccc;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.camera-controls {
+    display: flex;
+    padding: 10px;
+    gap: 10px;
+    justify-content: center;
+    background-color: #383838;
+    border-top: 1px solid #5a5a5a;
+}
+
+.camera-update-button, .camera-jump-button, .camera-delete-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.3s;
+}
+
+.camera-update-button {
+    background-color: #3498db;
+    color: white;
+}
+
+.camera-update-button:hover {
+    background-color: #2980b9;
+}
+
+.camera-jump-button {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.camera-jump-button:hover {
+    background-color: #27ae60;
+}
+
+.camera-delete-button {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.camera-delete-button:hover {
+    background-color: #c0392b;
+}
+
+.camera-reference {
+    margin-left: 10px;
+    font-weight: bold;
+    color: #5680c2;
+}

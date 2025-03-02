@@ -66,10 +66,12 @@ const SectionManager = {
         });
     },
 
+    
     async restoreContentForSection(sectionId) {
         const sectionContent = document.querySelector(`#section-content-${sectionId}`);
         const tableData = DataStore.getTableData(sectionId, 'tables') || {};
         const editorData = DataStore.getTableData(sectionId, 'editors') || {};
+        const cameraData = DataStore.getTableData(sectionId, 'cameras') || {};
         
         const content = [];
     
@@ -94,10 +96,21 @@ const SectionManager = {
                 order: data.order || 0
             });
         });
+        
+        // Prepare cameras
+        Object.entries(cameraData).forEach(([cameraNumber, data]) => {
+            content.push({
+                type: 'camera',
+                number: parseInt(cameraNumber),
+                data: data,
+                name: data.name || `Camera ${cameraNumber}`,
+                order: data.order || 0
+            });
+        });
     
         // Sort content based on order
         content.sort((a, b) => a.order - b.order);
-
+    
         // Clear existing content
         sectionContent.innerHTML = '';
     
@@ -107,6 +120,8 @@ const SectionManager = {
                 this.renderTable(sectionContent, sectionId, item.number, item.data);
             } else if (item.type === 'editor') {
                 await EditorManager.restoreEditor(sectionId, item.number, item.data);
+            } else if (item.type === 'camera') {
+                CameraManager.renderCamera(sectionContent, sectionId, item.number, item.data);
             }
         }
     },
@@ -514,19 +529,27 @@ const SectionManager = {
 
     addFeature(sectionId) {
         console.log(`Adding feature to section ${sectionId}`);
-        const featureType = prompt("Choose feature type:\n1. Table\n2. Rich Text Editor\nEnter 1 or 2:");
+        const featureType = prompt("Choose feature type:\n1. Table\n2. Rich Text Editor\n3. Camera\nEnter 1, 2, or 3:");
         
         if (featureType === "1") {
             this.addTable(sectionId);
         } else if (featureType === "2") {
             this.addEditor(sectionId);
+        } else if (featureType === "3") {
+            this.addCamera(sectionId);
         } else {
             alert("Invalid choice. Please try again.");
         }
     },
+    
+
+
+    // Add the addCamera method
+    async addCamera(sectionId) {
+        console.log(`Adding camera to section ${sectionId}`);
+        await CameraManager.addCamera(sectionId);
+    },
  
-
-
 
     addTable(sectionId) {
         const sectionContent = document.querySelector(`#section-content-${sectionId}`);
