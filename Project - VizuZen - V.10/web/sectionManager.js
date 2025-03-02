@@ -529,16 +529,121 @@ const SectionManager = {
 
     addFeature(sectionId) {
         console.log(`Adding feature to section ${sectionId}`);
-        const featureType = prompt("Choose feature type:\n1. Table\n2. Rich Text Editor\n3. Camera\nEnter 1, 2, or 3:");
+        this.showFeatureSelectionDialog(sectionId);
+    },
+    
+    async showFeatureSelectionDialog(sectionId) {
+        // Create modal container
+        const modal = document.createElement('div');
+        modal.className = 'modal feature-select-modal';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modal.style.zIndex = '1000';
         
-        if (featureType === "1") {
-            this.addTable(sectionId);
-        } else if (featureType === "2") {
-            this.addEditor(sectionId);
-        } else if (featureType === "3") {
-            this.addCamera(sectionId);
-        } else {
-            alert("Invalid choice. Please try again.");
+        // Create modal content
+        const content = document.createElement('div');
+        content.className = 'modal-content feature-select-content';
+        
+        const title = document.createElement('h3');
+        title.textContent = 'Add Feature';
+        content.appendChild(title);
+        
+        const description = document.createElement('p');
+        description.textContent = 'Select the type of feature you want to add:';
+        content.appendChild(description);
+        
+        const featuresContainer = document.createElement('div');
+        featuresContainer.className = 'features-container';
+        
+        // Define feature options
+        const features = [
+            {
+                id: 'table',
+                icon: '📊',
+                title: 'Table',
+                description: 'Add a data table for structured information'
+            },
+            {
+                id: 'editor',
+                icon: '📝',
+                title: 'Rich Text Editor',
+                description: 'Add a text editor for detailed content'
+            },
+            {
+                id: 'camera',
+                icon: '📷',
+                title: 'Camera',
+                description: 'Add a Blender camera view'
+            }
+        ];
+        
+        // Create feature option cards
+        features.forEach(feature => {
+            const featureCard = document.createElement('div');
+            featureCard.className = 'feature-card';
+            featureCard.onclick = () => {
+                document.body.removeChild(modal);
+                this.handleFeatureSelection(sectionId, feature.id);
+            };
+            
+            const featureIcon = document.createElement('div');
+            featureIcon.className = 'feature-icon';
+            featureIcon.textContent = feature.icon;
+            
+            const featureTitle = document.createElement('div');
+            featureTitle.className = 'feature-title';
+            featureTitle.textContent = feature.title;
+            
+            const featureDescription = document.createElement('div');
+            featureDescription.className = 'feature-description';
+            featureDescription.textContent = feature.description;
+            
+            featureCard.appendChild(featureIcon);
+            featureCard.appendChild(featureTitle);
+            featureCard.appendChild(featureDescription);
+            
+            featuresContainer.appendChild(featureCard);
+        });
+        
+        content.appendChild(featuresContainer);
+        
+        // Add cancel button
+        const cancelButton = document.createElement('button');
+        cancelButton.className = 'cancel-button';
+        cancelButton.textContent = 'Cancel';
+        cancelButton.onclick = () => {
+            document.body.removeChild(modal);
+        };
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'button-container';
+        buttonContainer.appendChild(cancelButton);
+        content.appendChild(buttonContainer);
+        
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+    },
+    
+    handleFeatureSelection(sectionId, featureType) {
+        switch (featureType) {
+            case 'table':
+                this.addTable(sectionId);
+                break;
+            case 'editor':
+                this.addEditor(sectionId);
+                break;
+            case 'camera':
+                this.addCamera(sectionId);
+                break;
+            default:
+                console.error('Unknown feature type:', featureType);
         }
     },
     

@@ -754,29 +754,46 @@ body {
     margin-top: 20px;
 }
 
-/* Camera Styles */
+/* Enhanced Camera Styles */
+
 .camera-wrapper {
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid #4a4a4a;
+    border-radius: 8px;
     overflow: hidden;
     margin-bottom: 20px;
-    background-color: #383838;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #2a2a2a;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-.camera-title {
-    padding: 10px;
-    background-color: #4a4a4a;
-    font-weight: bold;
-    border-bottom: 1px solid #5a5a5a;
+.camera-title-container {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: #3a3a3a;
+    border-bottom: 1px solid #4a4a4a;
+}
+
+.camera-select {
+    flex: 1;
+    padding: 8px 12px;
+    background-color: #2a2a2a;
     color: #e0e0e0;
-    cursor: text;
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.position-info {
+    margin-left: 15px;
+    color: #a0a0a0;
+    font-size: 13px;
+    font-family: monospace;
 }
 
 .camera-preview {
-    padding: 10px;
+    padding: 15px;
     text-align: center;
-    background-color: #2a2a2a;
+    background-color: #252525;
     min-height: 150px;
     display: flex;
     align-items: center;
@@ -787,32 +804,35 @@ body {
     max-width: 100%;
     max-height: 300px;
     object-fit: contain;
+    border: 1px solid #4a4a4a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .camera-info {
-    padding: 10px;
+    padding: 15px;
     background-color: #333;
-    color: #ccc;
+    color: #b0b0b0;
     font-family: monospace;
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .camera-controls {
     display: flex;
-    padding: 10px;
-    gap: 10px;
+    padding: 15px;
+    gap: 15px;
     justify-content: center;
-    background-color: #383838;
-    border-top: 1px solid #5a5a5a;
+    background-color: #303030;
+    border-top: 1px solid #4a4a4a;
 }
 
 .camera-update-button, .camera-jump-button, .camera-delete-button {
-    padding: 8px 16px;
+    padding: 10px 16px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
-    transition: background-color 0.3s;
+    font-size: 14px;
+    transition: all 0.2s ease;
 }
 
 .camera-update-button {
@@ -846,4 +866,226 @@ body {
     margin-left: 10px;
     font-weight: bold;
     color: #5680c2;
+}
+
+/* Modal styles for delete options */
+.modal {
+    opacity: 1 !important;
+}
+
+.modal-content {
+    max-width: 450px;
+}
+
+.modal-content h3 {
+    color: #e0e0e0;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #4a4a4a;
+    padding-bottom: 10px;
+}
+
+.modal-content p {
+    margin-bottom: 20px;
+    color: #b0b0b0;
+}
+
+/* Delete options dialog buttons */
+.delete-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.delete-option-button {
+    padding: 12px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.2s ease;
+    text-align: left;
+}
+
+.delete-option-cancel {
+    background-color: #7f8c8d;
+    color: white;
+}
+
+.delete-option-section-only {
+    background-color: #3498db;
+    color: white;
+}
+
+.delete-option-delete-blender {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.delete-option-button:hover {
+    filter: brightness(110%);
+}
+
+/* Camera selection dialog */
+.camera-select-dialog {
+    background-color: #2a2a2a;
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.camera-select-dialog h3 {
+    margin-top: 0;
+    color: #e0e0e0;
+    border-bottom: 1px solid #4a4a4a;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.camera-select-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+}
+
+.camera-option {
+    padding: 12px 15px;
+    border-bottom: 1px solid #3a3a3a;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.camera-option:last-child {
+    border-bottom: none;
+}
+
+.camera-option:hover {
+    background-color: #3a3a3a;
+}
+
+.camera-option.selected {
+    background-color: #2c3e50;
+}
+
+.camera-option-icon {
+    margin-right: 10px;
+    color: #3498db;
+}
+
+.camera-option-details {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+}
+
+.camera-select-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Feature Dialog Styles */
+.feature-select-modal {
+    opacity: 1 !important;
+}
+
+.feature-select-content {
+    background-color: #2a2a2a;
+    padding: 25px;
+    border-radius: 8px;
+    max-width: 600px;
+    color: #e0e0e0;
+}
+
+.feature-select-content h3 {
+    margin-top: 0;
+    color: #e0e0e0;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.feature-select-content p {
+    color: #b0b0b0;
+    margin-bottom: 20px;
+}
+
+.features-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.feature-card {
+    background-color: #383838;
+    border: 1px solid #4a4a4a;
+    border-radius: 6px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.feature-card:hover {
+    background-color: #454545;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.feature-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.feature-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #e0e0e0;
+}
+
+.feature-description {
+    font-size: 13px;
+    color: #a0a0a0;
+    line-height: 1.4;
+}
+
+.button-container {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cancel-button {
+    background-color: #7f8c8d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.cancel-button:hover {
+    background-color: #95a5a6;
+}
+
+/* Feature-specific colors */
+.feature-card[data-type="table"] .feature-icon {
+    color: #3498db;
+}
+
+.feature-card[data-type="editor"] .feature-icon {
+    color: #2ecc71;
+}
+
+.feature-card[data-type="camera"] .feature-icon {
+    color: #e74c3c;
 }
