@@ -4,7 +4,7 @@
 Installation Instructions for project VizuZen
 
 
-**Install from Blender Preferences
+##Install from Blender Preferences
 
 1) Open Blender
 2) Go to Edit > Preferences
@@ -14,7 +14,7 @@ Installation Instructions for project VizuZen
 6) Select the ZIP file and click Install Add-on
 7) Enable the addon by checking the checkbox next to its name
 
-**Install eel-python library
+##Install eel-python library
 1) you will need the eel library to make it work with New UI.
 
 
