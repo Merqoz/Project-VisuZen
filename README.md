@@ -1,1 +1,1 @@
-# Project-VisuZen
+# Project-VisuZen - Blender Addon
