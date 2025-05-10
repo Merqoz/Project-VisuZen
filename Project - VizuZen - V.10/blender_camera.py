@@ -9,33 +9,80 @@ import bpy.types
 import time
 import traceback
 import functools
+import gc  # Added for garbage collection
 
 # Maximum retry attempts for Blender operations
 MAX_RETRIES = 3
 RETRY_DELAY = 1.5  # seconds
 
+# Add configuration flags for improved stability
+ENABLE_RENDERED_PREVIEWS = False  # Use viewport screenshots instead of rendered views
+PREVIEW_RESOLUTION = 400  # Lower resolution for previews (was 800x600)
+USE_MINIMAL_RENDERING = True  # Use minimal render settings for previews
+MAX_CONCURRENT_OPERATIONS = 1  # Limit concurrent operations
+FORCE_GC_AFTER_RENDER = True  # Force garbage collection after rendering
+
+# Global operation counter
+_ongoing_operations = 0
+_operation_lock = False
+
 def safe_blender_operation(func):
     """Decorator to make Blender operations more robust with retry logic"""
     @functools.wraps(func)  # This preserves the original function name and metadata
     def safe_wrapper(*args, **kwargs):
+        global _ongoing_operations, _operation_lock
+        
+        # Check if we're already at max operations
+        if _ongoing_operations >= MAX_CONCURRENT_OPERATIONS or _operation_lock:
+            print(f"Too many operations in progress. Delaying {func.__name__}...")
+            time.sleep(2)  # Wait and hope things clear up
+            
         attempts = 0
         last_error = None
         
-        while attempts < MAX_RETRIES:
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                last_error = e
-                print(f"Blender operation failed (attempt {attempts+1}/{MAX_RETRIES}): {e}")
-                traceback.print_exc()
-                attempts += 1
-                if attempts < MAX_RETRIES:
-                    print(f"Retrying in {RETRY_DELAY} seconds...")
-                    time.sleep(RETRY_DELAY)
-        
-        # If we get here, all retries failed
-        print(f"All retry attempts failed for {func.__name__}: {last_error}")
-        return {"success": False, "message": f"Operation failed after {MAX_RETRIES} attempts: {str(last_error)}"}
+        try:
+            # Increment operation counter
+            _ongoing_operations += 1
+            _operation_lock = True
+            
+            while attempts < MAX_RETRIES:
+                try:
+                    # Only allow one active operation at a time
+                    result = func(*args, **kwargs)
+                    
+                    # Force garbage collection if configured
+                    if FORCE_GC_AFTER_RENDER and func.__name__ in ['render_camera_view', 'capture_viewport_screenshot']:
+                        print(f"Triggering garbage collection after {func.__name__}")
+                        gc.collect()
+                        
+                    return result
+                except Exception as e:
+                    last_error = e
+                    print(f"Blender operation failed (attempt {attempts+1}/{MAX_RETRIES}): {e}")
+                    traceback.print_exc()
+                    attempts += 1
+                    
+                    # Clean up any potential memory issues
+                    if 'render' in func.__name__.lower():
+                        try:
+                            # Try to free up render resources
+                            if hasattr(bpy.data, 'images') and "Render Result" in bpy.data.images:
+                                bpy.data.images["Render Result"].buffers_free()
+                            gc.collect()
+                        except:
+                            pass
+                            
+                    if attempts < MAX_RETRIES:
+                        print(f"Retrying in {RETRY_DELAY} seconds...")
+                        time.sleep(RETRY_DELAY)
+            
+            # If we get here, all retries failed
+            print(f"All retry attempts failed for {func.__name__}: {last_error}")
+            return {"success": False, "message": f"Operation failed after {MAX_RETRIES} attempts: {str(last_error)}"}
+        finally:
+            # Always decrement operation counter, even if an exception occurs
+            _ongoing_operations -= 1
+            _operation_lock = False
     
     return safe_wrapper  # Return the wrapped function with preserved name
 
@@ -70,11 +117,15 @@ def capture_viewport_screenshot():
 
 @safe_blender_operation
 def render_camera_view(camera_obj):
-    """Render an image from the camera's perspective"""
+    """Render an image from the camera's perspective with improved memory management"""
     try:
         # Check if camera object exists and is valid
         if not camera_obj or camera_obj.type != 'CAMERA':
             raise Exception("Invalid camera object")
+        
+        # Skip rendering if configured and return a placeholder instead
+        if not ENABLE_RENDERED_PREVIEWS:
+            return capture_viewport_screenshot()
             
         # Create a temporary file
         temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
@@ -88,31 +139,71 @@ def render_camera_view(camera_obj):
         original_resolution_y = bpy.context.scene.render.resolution_y
         original_percentage = bpy.context.scene.render.resolution_percentage
         
-        # Set render settings
-        bpy.context.scene.camera = camera_obj
-        bpy.context.scene.render.filepath = temp_path
-        bpy.context.scene.render.resolution_x = 800  # Lower resolution for faster preview
-        bpy.context.scene.render.resolution_y = 600
-        bpy.context.scene.render.resolution_percentage = 50
+        # Additional settings to save if using minimal rendering
+        if USE_MINIMAL_RENDERING:
+            original_engine = bpy.context.scene.render.engine
+            original_samples = bpy.context.scene.eevee.taa_render_samples if hasattr(bpy.context.scene, 'eevee') else None
+            original_use_simplify = bpy.context.scene.render.use_simplify
+            original_simplify_subdivision = bpy.context.scene.render.simplify_subdivision
         
-        # Render
-        bpy.ops.render.render(write_still=True)
-        
-        # Restore original settings
-        bpy.context.scene.camera = original_camera
-        bpy.context.scene.render.filepath = original_filepath
-        bpy.context.scene.render.resolution_x = original_resolution_x
-        bpy.context.scene.render.resolution_y = original_resolution_y
-        bpy.context.scene.render.resolution_percentage = original_percentage
-        
-        # Read image and convert to base64
-        with open(temp_path, 'rb') as img_file:
-            img_data = base64.b64encode(img_file.read()).decode('utf-8')
+        try:
+            # Set render settings
+            bpy.context.scene.camera = camera_obj
+            bpy.context.scene.render.filepath = temp_path
+            bpy.context.scene.render.resolution_x = PREVIEW_RESOLUTION  # Lower resolution
+            bpy.context.scene.render.resolution_y = PREVIEW_RESOLUTION * 3 // 4  # Maintain aspect ratio
+            bpy.context.scene.render.resolution_percentage = 50
             
-        # Clean up
-        os.unlink(temp_path)
-        
-        return img_data
+            # Set minimal render settings if configured
+            if USE_MINIMAL_RENDERING:
+                # Use EEVEE for faster rendering
+                bpy.context.scene.render.engine = 'BLENDER_EEVEE'
+                
+                # Reduce samples for faster rendering
+                if hasattr(bpy.context.scene, 'eevee'):
+                    bpy.context.scene.eevee.taa_render_samples = 4
+                
+                # Enable simplification for faster rendering
+                bpy.context.scene.render.use_simplify = True
+                bpy.context.scene.render.simplify_subdivision = 1
+            
+            # Render
+            bpy.ops.render.render(write_still=True)
+            
+            # Read image and convert to base64
+            with open(temp_path, 'rb') as img_file:
+                img_data = base64.b64encode(img_file.read()).decode('utf-8')
+            
+            return img_data
+            
+        finally:
+            # Restore original settings
+            bpy.context.scene.camera = original_camera
+            bpy.context.scene.render.filepath = original_filepath
+            bpy.context.scene.render.resolution_x = original_resolution_x
+            bpy.context.scene.render.resolution_y = original_resolution_y
+            bpy.context.scene.render.resolution_percentage = original_percentage
+            
+            # Restore additional settings if using minimal rendering
+            if USE_MINIMAL_RENDERING:
+                bpy.context.scene.render.engine = original_engine
+                if hasattr(bpy.context.scene, 'eevee') and original_samples is not None:
+                    bpy.context.scene.eevee.taa_render_samples = original_samples
+                bpy.context.scene.render.use_simplify = original_use_simplify
+                bpy.context.scene.render.simplify_subdivision = original_simplify_subdivision
+            
+            # Clean up
+            try:
+                os.unlink(temp_path)
+            except:
+                pass
+            
+            # Free up render result
+            if hasattr(bpy.data, 'images') and "Render Result" in bpy.data.images:
+                try:
+                    bpy.data.images["Render Result"].buffers_free()
+                except:
+                    pass
     except Exception as e:
         print(f"Error rendering camera view: {e}")
         traceback.print_exc()
@@ -150,7 +241,7 @@ def get_all_cameras_in_scene():
 @eel.expose
 @safe_blender_operation
 def add_camera_at_current_view(section_id, camera_number, frame, render_preview=False):
-    """Add a camera at the current view in Blender"""
+    """Add a camera at the current view in Blender with safer operations"""
     try:
         # Create a new camera
         camera_data = bpy.data.cameras.new(f"Camera_{section_id}_{camera_number}")
@@ -192,12 +283,8 @@ def add_camera_at_current_view(section_id, camera_number, frame, render_preview=
         camera_obj["camera_frame"] = frame
         camera_obj["camera_name"] = f"Camera {camera_number}"
         
-        # Capture preview image (either simple screenshot or rendered view)
-        preview_image = None
-        if render_preview:
-            preview_image = render_camera_view(camera_obj)
-        else:
-            preview_image = capture_viewport_screenshot()
+        # Always use screenshot for stability
+        preview_image = capture_viewport_screenshot()
         
         # Create camera data for UI
         camera_data = {
@@ -247,8 +334,8 @@ def link_existing_camera(section_id, camera_number, camera_name, frame):
         camera_obj["camera_frame"] = frame
         camera_obj["camera_name"] = f"Camera {camera_number}"
         
-        # Capture preview image
-        preview_image = render_camera_view(camera_obj)
+        # Capture preview image (use screenshot for stability)
+        preview_image = capture_viewport_screenshot()
         
         # Get camera position and rotation
         pos = camera_obj.location
@@ -313,12 +400,8 @@ def update_camera_from_current_view(section_id, camera_number, frame, render_pre
         rot = camera_obj.rotation_euler
         camera_obj["camera_frame"] = frame
         
-        # Capture preview image (either simple screenshot or rendered view)
-        preview_image = None
-        if render_preview:
-            preview_image = render_camera_view(camera_obj)
-        else:
-            preview_image = capture_viewport_screenshot()
+        # Always use screenshot for stability
+        preview_image = capture_viewport_screenshot()
         
         # Create updated camera data for UI
         camera_data = {
@@ -333,53 +416,6 @@ def update_camera_from_current_view(section_id, camera_number, frame, render_pre
         return {"success": True, "camera_data": camera_data}
     except Exception as e:
         print(f"Error updating camera: {e}")
-        traceback.print_exc()
-        return {"success": False, "message": str(e)}
-
-@eel.expose
-@safe_blender_operation
-def change_camera_view(section_id, camera_number, new_camera_name):
-    """Change the camera view to another existing camera"""
-    try:
-        # Find the new camera object
-        new_camera_obj = None
-        for obj in bpy.data.objects:
-            if obj.type == 'CAMERA' and obj.name == new_camera_name:
-                new_camera_obj = obj
-                break
-        
-        if not new_camera_obj:
-            return {"success": False, "message": f"Camera '{new_camera_name}' not found"}
-        
-        # Get current frame
-        current_frame = bpy.context.scene.frame_current
-        
-        # Update custom properties
-        new_camera_obj["section_id"] = section_id
-        new_camera_obj["camera_number"] = camera_number
-        new_camera_obj["camera_frame"] = current_frame
-        new_camera_obj["camera_name"] = f"Camera {camera_number}"
-        
-        # Capture preview image
-        preview_image = render_camera_view(new_camera_obj)
-        
-        # Get camera properties
-        pos = new_camera_obj.location
-        rot = new_camera_obj.rotation_euler
-        
-        # Create updated camera data for UI
-        camera_data = {
-            "name": new_camera_obj.name,
-            "position": {"x": pos.x, "y": pos.y, "z": pos.z},
-            "rotation": {"x": rot.x, "y": rot.y, "z": rot.z},
-            "frame": current_frame,
-            "preview_image": preview_image,
-            "blender_name": new_camera_obj.name
-        }
-        
-        return {"success": True, "camera_data": camera_data}
-    except Exception as e:
-        print(f"Error changing camera view: {e}")
         traceback.print_exc()
         return {"success": False, "message": str(e)}
 
@@ -513,8 +549,8 @@ def get_camera_data(section_id, camera_number):
             "blender_name": camera_obj.name
         }
         
-        # Try to get a new preview image
-        preview_image = render_camera_view(camera_obj)
+        # Try to get a new preview image - use viewport screenshot for stability
+        preview_image = capture_viewport_screenshot()
         if preview_image:
             camera_data["preview_image"] = preview_image
         
